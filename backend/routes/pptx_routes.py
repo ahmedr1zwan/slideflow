@@ -224,6 +224,7 @@ def search_pptx_phrase():
                         "semantic_similarity": semantic_similarity,
                         "combined_score": combined_score
                     })
+                    continue
 
                 # Check image metadata
                 for image in image_analysis:
@@ -247,7 +248,7 @@ def search_pptx_phrase():
                                 "semantic_similarity": image_semantic_similarity,
                                 "combined_score": image_combined_score
                             })
-
+                            break
                     # Syntactic and semantic similarity in image labels
                     for label in labels:
                         label_embedding = sbert_model.encode(label)
@@ -265,6 +266,7 @@ def search_pptx_phrase():
                                 "semantic_similarity": label_semantic_similarity,
                                 "combined_score": label_combined_score
                             })
+                            break
 
         # Sort results by combined score in descending order
         matching_results.sort(key=lambda x: x['combined_score'], reverse=True)
