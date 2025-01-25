@@ -210,6 +210,9 @@
 
 // export default SpeechRecognitionExample;
 
+
+// LAST WORKING
+
 import React, { useState, useRef, useEffect } from 'react';
 
 function SpeechRecognitionExample() {
