@@ -153,16 +153,17 @@ def analyze_pptx_content():
 
 
 @pptx_routes.route('/search', methods=['POST'])
-def search_pptx_keyword():
+def search_pptx_phrase():
     search_all = request.args.get('searchAll', 'false').lower() == 'true'  # Check if searchAll is true
     data = request.get_json()
 
-    if not data or 'keyword' not in data:
-        return jsonify({"error": "Keyword not provided"}), 400
+    if not data or 'phrase' not in data:
+        return jsonify({"error": "Phrase not provided"}), 400
 
-    keyword = data['keyword']
-    keyword_embedding = sbert_model.encode(keyword)  # Encode keyword for semantic matching
-    fuzzy_threshold = 80  # Fuzzy matching threshold
+    phrase = data['phrase']
+    phrase_embedding = sbert_model.encode(phrase)  # Encode the phrase for semantic matching
+    semantic_threshold = 0.6  # Minimum threshold for semantic similarity
+    fuzzy_threshold = 80  # Minimum threshold for fuzzy matching
     matching_results = []
 
     if search_all:
@@ -192,59 +193,72 @@ def search_pptx_keyword():
             slide_text = slide['slide_text']
             image_analysis = slide['image_analysis']
 
-            # Initialize a flag to avoid duplicate matches for the same slide
-            is_match = False
+            # Syntactic similarity (fuzzy matching)
+            fuzzy_score = fuzz.partial_ratio(phrase.lower(), slide_text.lower())
 
-            # Fuzzy match in slide text
-            if fuzz.partial_ratio(keyword.lower(), slide_text.lower()) >= fuzzy_threshold:
-                matching_results.append({"file_name": file_name, "slide_name": slide_name, "slide_number": slide_number})
-                is_match = True
+            # Semantic similarity (cosine similarity with embeddings)
+            slide_embedding = sbert_model.encode(slide_text)
+            semantic_similarity = util.cos_sim(phrase_embedding, slide_embedding).item()
 
-            # Semantic similarity in slide text
-            if not is_match:
-                slide_embedding = sbert_model.encode(slide_text)
-                similarity = util.cos_sim(keyword_embedding, slide_embedding).item()
-                if similarity >= 0.6:  # Adjust threshold as needed
-                    matching_results.append({"file_name": file_name, "slide_name": slide_name, "slide_number": slide_number})
-                    is_match = True
+            # Combine scores (weighted average)
+            combined_score = 0.7 * semantic_similarity + 0.3 * (fuzzy_score / 100)
 
-            # Check image analysis if no match yet
-            if not is_match:
-                for image in image_analysis:
-                    labels = image['labels']
-                    image_text = image['text']
+            if combined_score >= semantic_threshold:
+                matching_results.append({
+                    "file_name": file_name,
+                    "slide_name": slide_name,
+                    "slide_number": slide_number,
+                    "match_type": "text",
+                    "syntactic_score": fuzzy_score,
+                    "semantic_similarity": semantic_similarity,
+                    "combined_score": combined_score
+                })
 
-                    # Fuzzy match in image labels
-                    for label in labels:
-                        if fuzz.partial_ratio(keyword.lower(), label.lower()) >= fuzzy_threshold:
-                            matching_results.append({"file_name": file_name, "slide_name": slide_name, "slide_number": slide_number})
-                            is_match = True
-                            break
+            # Check image metadata
+            for image in image_analysis:
+                labels = image['labels']
+                image_text = image['text']
 
-                    # Semantic similarity in image labels
-                    if not is_match:
-                        for label in labels:
-                            label_embedding = sbert_model.encode(label)
-                            similarity = util.cos_sim(keyword_embedding, label_embedding).item()
-                            if similarity >= 0.7:  # Adjust threshold as needed
-                                matching_results.append({"file_name": file_name, "slide_name": slide_name, "slide_number": slide_number})
-                                is_match = True
-                                break
+                # Syntactic and semantic similarity in image text
+                if image_text.strip():
+                    image_text_embedding = sbert_model.encode(image_text)
+                    image_semantic_similarity = util.cos_sim(phrase_embedding, image_text_embedding).item()
+                    image_fuzzy_score = fuzz.partial_ratio(phrase.lower(), image_text.lower())
+                    image_combined_score = 0.7 * image_semantic_similarity + 0.3 * (image_fuzzy_score / 100)
 
-                    # Fuzzy match in image text
-                    if not is_match and fuzz.partial_ratio(keyword.lower(), image_text.lower()) >= fuzzy_threshold:
-                        matching_results.append({"file_name": file_name, "slide_name": slide_name, "slide_number": slide_number})
-                        is_match = True
+                    if image_combined_score >= semantic_threshold:
+                        matching_results.append({
+                            "file_name": file_name,
+                            "slide_name": slide_name,
+                            "slide_number": slide_number,
+                            "match_type": "image_text",
+                            "syntactic_score": image_fuzzy_score,
+                            "semantic_similarity": image_semantic_similarity,
+                            "combined_score": image_combined_score
+                        })
 
-                    # Semantic similarity in image text
-                    if not is_match and image_text.strip():
-                        image_text_embedding = sbert_model.encode(image_text)
-                        similarity = util.cos_sim(keyword_embedding, image_text_embedding).item()
-                        if similarity >= 0.6:  # Adjust threshold as needed
-                            matching_results.append({"file_name": file_name, "slide_name": slide_name, "slide_number": slide_number})
-                            is_match = True
+                # Syntactic and semantic similarity in image labels
+                for label in labels:
+                    label_embedding = sbert_model.encode(label)
+                    label_semantic_similarity = util.cos_sim(phrase_embedding, label_embedding).item()
+                    label_fuzzy_score = fuzz.partial_ratio(phrase.lower(), label.lower())
+                    label_combined_score = 0.7 * label_semantic_similarity + 0.3 * (label_fuzzy_score / 100)
+
+                    if label_combined_score >= semantic_threshold:
+                        matching_results.append({
+                            "file_name": file_name,
+                            "slide_name": slide_name,
+                            "slide_number": slide_number,
+                            "match_type": "image_label",
+                            "syntactic_score": label_fuzzy_score,
+                            "semantic_similarity": label_semantic_similarity,
+                            "combined_score": label_combined_score
+                        })
+
+    # Sort results by combined score in descending order
+    matching_results.sort(key=lambda x: x['combined_score'], reverse=True)
 
     return jsonify({
-        "message": f"Keyword '{keyword}' search results:",
+        "message": f"Phrase '{phrase}' search results:",
         "results": matching_results
     }), 200
