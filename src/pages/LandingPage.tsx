@@ -1,5 +1,5 @@
 import React from 'react'
-import SpeechRecognitionExample from '../SpeechRecognitionExample.tsx'
+import SpeechRecognitionExample from '../components/SpeechRecognitionExample.tsx'
 
 export const LandingPage = () => {
     return (
