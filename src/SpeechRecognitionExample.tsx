@@ -77,7 +77,7 @@ const SpeechRecognitionExample = () => {
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1>James is Sooo HOT</h1>
+      <h1>Web Speech API in React</h1>
       <div>
         <button onClick={handleStart} disabled={listening}>
           Start
