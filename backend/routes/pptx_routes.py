@@ -8,6 +8,8 @@ from google.cloud import vision
 from fuzzywuzzy import fuzz  # Add fuzzy matching support
 from sentence_transformers import SentenceTransformer, util
 from utils import validate_file_path, allowed_file
+import redis
+import json
 
 
 pptx_routes = Blueprint('pptx_routes', __name__)
@@ -16,8 +18,8 @@ pptx_routes = Blueprint('pptx_routes', __name__)
 app = Flask(__name__)
 CORS(app)  # Enable CORS
 
-# Cache structure for PPTX files
-pptx_cache = {}
+# Initialize Redis client
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # Initialize Google Vision client
 vision_client = vision.ImageAnnotatorClient()
@@ -48,7 +50,7 @@ def analyze_pptx_content():
     data = request.get_json()
     if not data or 'file_path' not in data:
         return jsonify({"error": "File path not provided"}), 400
-    
+
     file_path = data['file_path']
     error = validate_file_path(file_path)
     if error:
@@ -57,11 +59,12 @@ def analyze_pptx_content():
     # Generate a unique hash for the file
     file_hash = hashlib.md5(file_path.encode()).hexdigest()
 
-    # Check if the file is already cached
-    if file_hash in pptx_cache:
-        return jsonify({"message": "Data retrieved from cache", "data": pptx_cache[file_hash]}), 200
-
     try:
+        # Check if the file is already cached in Redis
+        cached_data = redis_client.get(file_hash)
+        if cached_data:
+            return jsonify({"message": "Data retrieved from Redis cache", "data": eval(cached_data)}), 200
+
         # Extract and analyze content from the PowerPoint file
         presentation = Presentation(file_path)
         slides_data = []
@@ -140,16 +143,17 @@ def analyze_pptx_content():
                 "image_analysis": image_analysis
             })
 
-        # Cache the results
-        pptx_cache[file_hash] = {
+        # Cache the results in Redis
+        redis_client.set(file_hash, json.dumps({
             "file_name": os.path.basename(file_path),
             "slides": slides_data
-        }
+        }))
 
         return jsonify({"message": "Content analyzed and cached", "data": slides_data}), 200
 
     except Exception as e:
         return jsonify({"error": f"Failed to process the PowerPoint file: {str(e)}"}), 500
+
 
 
 @pptx_routes.route('/search', methods=['POST'])
@@ -166,99 +170,109 @@ def search_pptx_phrase():
     fuzzy_threshold = 80  # Minimum threshold for fuzzy matching
     matching_results = []
 
-    if search_all:
-        # Search across all cached files
-        files_to_search = pptx_cache
-    else:
-        # Search within a specific file
-        if 'file_path' not in data:
-            return jsonify({"error": "file_path must be provided if searchAll is false"}), 400
+    try:
+        if search_all:
+            # Retrieve all cached keys from Redis
+            keys = redis_client.keys()
+        else:
+            # Search within a specific file
+            if 'file_path' not in data:
+                return jsonify({"error": "file_path must be provided if searchAll is false"}), 400
 
-        file_path = data['file_path']
-        file_hash = hashlib.md5(file_path.encode()).hexdigest()
+            file_path = data['file_path']
+            file_hash = hashlib.md5(file_path.encode()).hexdigest()
 
-        if file_hash not in pptx_cache:
-            return jsonify({"error": f"File '{file_path}' not found in cache. Please analyze it first."}), 404
+            if not redis_client.exists(file_hash):
+                return jsonify({"error": f"File '{file_path}' not found in Redis cache. Please analyze it first."}), 404
 
-        files_to_search = {file_hash: pptx_cache[file_hash]}
+            keys = [file_hash]
 
-    # Perform the search
-    for file_hash, file_data in files_to_search.items():
-        file_name = file_data['file_name']
-        slides_data = file_data['slides']
+        # Perform the search
+        for key in keys:
+            # Retrieve cached file data from Redis
+            cached_data = redis_client.get(key)
+            if not cached_data:
+                continue
+            file_data = json.loads(cached_data)  # Parse JSON string into Python dictionary
 
-        for slide in slides_data:
-            slide_number = slide['slide_number']
-            slide_name = slide['slide_name']
-            slide_text = slide['slide_text']
-            image_analysis = slide['image_analysis']
+            file_name = file_data['file_name']
+            slides_data = file_data['slides']
 
-            # Syntactic similarity (fuzzy matching)
-            fuzzy_score = fuzz.partial_ratio(phrase.lower(), slide_text.lower())
+            for slide in slides_data:
+                slide_number = slide['slide_number']
+                slide_name = slide['slide_name']
+                slide_text = slide['slide_text']
+                image_analysis = slide['image_analysis']
 
-            # Semantic similarity (cosine similarity with embeddings)
-            slide_embedding = sbert_model.encode(slide_text)
-            semantic_similarity = util.cos_sim(phrase_embedding, slide_embedding).item()
+                # Syntactic similarity (fuzzy matching)
+                fuzzy_score = fuzz.partial_ratio(phrase.lower(), slide_text.lower())
 
-            # Combine scores (weighted average)
-            combined_score = 0.7 * semantic_similarity + 0.3 * (fuzzy_score / 100)
+                # Semantic similarity (cosine similarity with embeddings)
+                slide_embedding = sbert_model.encode(slide_text)
+                semantic_similarity = util.cos_sim(phrase_embedding, slide_embedding).item()
 
-            if combined_score >= semantic_threshold:
-                matching_results.append({
-                    "file_name": file_name,
-                    "slide_name": slide_name,
-                    "slide_number": slide_number,
-                    "match_type": "text",
-                    "syntactic_score": fuzzy_score,
-                    "semantic_similarity": semantic_similarity,
-                    "combined_score": combined_score
-                })
+                # Combine scores (weighted average)
+                combined_score = 0.7 * semantic_similarity + 0.3 * (fuzzy_score / 100)
 
-            # Check image metadata
-            for image in image_analysis:
-                labels = image['labels']
-                image_text = image['text']
+                if combined_score >= semantic_threshold:
+                    matching_results.append({
+                        "file_name": file_name,
+                        "slide_name": slide_name,
+                        "slide_number": slide_number,
+                        "match_type": "text",
+                        "syntactic_score": fuzzy_score,
+                        "semantic_similarity": semantic_similarity,
+                        "combined_score": combined_score
+                    })
 
-                # Syntactic and semantic similarity in image text
-                if image_text.strip():
-                    image_text_embedding = sbert_model.encode(image_text)
-                    image_semantic_similarity = util.cos_sim(phrase_embedding, image_text_embedding).item()
-                    image_fuzzy_score = fuzz.partial_ratio(phrase.lower(), image_text.lower())
-                    image_combined_score = 0.7 * image_semantic_similarity + 0.3 * (image_fuzzy_score / 100)
+                # Check image metadata
+                for image in image_analysis:
+                    labels = image['labels']
+                    image_text = image['text']
 
-                    if image_combined_score >= semantic_threshold:
-                        matching_results.append({
-                            "file_name": file_name,
-                            "slide_name": slide_name,
-                            "slide_number": slide_number,
-                            "match_type": "image_text",
-                            "syntactic_score": image_fuzzy_score,
-                            "semantic_similarity": image_semantic_similarity,
-                            "combined_score": image_combined_score
-                        })
+                    # Syntactic and semantic similarity in image text
+                    if image_text.strip():
+                        image_text_embedding = sbert_model.encode(image_text)
+                        image_semantic_similarity = util.cos_sim(phrase_embedding, image_text_embedding).item()
+                        image_fuzzy_score = fuzz.partial_ratio(phrase.lower(), image_text.lower())
+                        image_combined_score = 0.7 * image_semantic_similarity + 0.3 * (image_fuzzy_score / 100)
 
-                # Syntactic and semantic similarity in image labels
-                for label in labels:
-                    label_embedding = sbert_model.encode(label)
-                    label_semantic_similarity = util.cos_sim(phrase_embedding, label_embedding).item()
-                    label_fuzzy_score = fuzz.partial_ratio(phrase.lower(), label.lower())
-                    label_combined_score = 0.7 * label_semantic_similarity + 0.3 * (label_fuzzy_score / 100)
+                        if image_combined_score >= semantic_threshold:
+                            matching_results.append({
+                                "file_name": file_name,
+                                "slide_name": slide_name,
+                                "slide_number": slide_number,
+                                "match_type": "image_text",
+                                "syntactic_score": image_fuzzy_score,
+                                "semantic_similarity": image_semantic_similarity,
+                                "combined_score": image_combined_score
+                            })
 
-                    if label_combined_score >= semantic_threshold:
-                        matching_results.append({
-                            "file_name": file_name,
-                            "slide_name": slide_name,
-                            "slide_number": slide_number,
-                            "match_type": "image_label",
-                            "syntactic_score": label_fuzzy_score,
-                            "semantic_similarity": label_semantic_similarity,
-                            "combined_score": label_combined_score
-                        })
+                    # Syntactic and semantic similarity in image labels
+                    for label in labels:
+                        label_embedding = sbert_model.encode(label)
+                        label_semantic_similarity = util.cos_sim(phrase_embedding, label_embedding).item()
+                        label_fuzzy_score = fuzz.partial_ratio(phrase.lower(), label.lower())
+                        label_combined_score = 0.7 * label_semantic_similarity + 0.3 * (label_fuzzy_score / 100)
 
-    # Sort results by combined score in descending order
-    matching_results.sort(key=lambda x: x['combined_score'], reverse=True)
+                        if label_combined_score >= semantic_threshold:
+                            matching_results.append({
+                                "file_name": file_name,
+                                "slide_name": slide_name,
+                                "slide_number": slide_number,
+                                "match_type": "image_label",
+                                "syntactic_score": label_fuzzy_score,
+                                "semantic_similarity": label_semantic_similarity,
+                                "combined_score": label_combined_score
+                            })
 
-    return jsonify({
-        "message": f"Phrase '{phrase}' search results:",
-        "results": matching_results
-    }), 200
+        # Sort results by combined score in descending order
+        matching_results.sort(key=lambda x: x['combined_score'], reverse=True)
+
+        return jsonify({
+            "message": f"Phrase '{phrase}' search results:",
+            "results": matching_results
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred during search: {str(e)}"}), 500
