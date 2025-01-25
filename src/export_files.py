@@ -11,10 +11,7 @@ def find_js_files(root_dir):
 def write_to_output_file(js_files, output_file):
     with open(output_file, 'w') as f:
         for file in js_files:
-            f.write(f"// {file}\n")
-            with open(file, 'r') as jf:
-                content = jf.read()
-                f.write(content + "\n\n")
+            f.write(f"{file}\n")
 
 if __name__ == "__main__":
     root_directory = os.path.dirname(os.path.abspath(__file__))

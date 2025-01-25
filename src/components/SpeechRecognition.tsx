@@ -1,56 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { usePDF } from './PDFContext';
+import React, { useState, useRef, useEffect, useContext } from 'react';
+import PDFNavigationContext from '../contexts/PDFNavigationContext';
 
 const SpeechRecognition = () => {
   const [transcript, setTranscript] = useState('');
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
+  const pageNavigation = useContext(PDFNavigationContext);
   // TODO: Consider defining a variable that keeps track of the transcript from beginning to now
 
   const commandPatterns = [
     /next slide$/i,
     /previous slide$/i,
-    /go to( the)? first slide$/i,
-    /go to( the)? last slide$/i,
-    /go to the slide with the (.+)$/i,
-    /go to the slide titled (.+)$/i,
+    /to( the)? first slide$/i,
+    /to( the)? last slide$/i,
+    /to the slide with the (.+)$/i,
+    /to the slide titled (.+)$/i,
     /search for (.+)$/i,
   ];
 
-  document.addEventListener('keydown', function (e) {
-    console.log(
-      'keyCodeDEP', e.which,
-      'key', e.key,
-      'code', e.code,
-      'location', e.location
-    );
+  document.addEventListener('keydown', () => {
+    console.log("testing");
+    pageNavigation.jumpToNextPage();
   });
-  const simulateKeyPress = ({
-    key,
-    code,
-    keyCode,
-    which,
-    ctrlKey = false,
-    altKey = false,
-    shiftKey = false,
-    metaKey = false,
-  }) => {
-    const eventInit = {
-      key,
-      code,
-      keyCode,
-      which,
-      ctrlKey,
-      altKey,
-      shiftKey,
-      metaKey,
-      bubbles: true,
-      cancelable: true,
-    };
-
-    // You can consider implementing the logic here but there is really no need to do so
-
-  };
 
   useEffect(() => {
     // Check if the browser supports SpeechRecognition
@@ -94,6 +65,17 @@ const SpeechRecognition = () => {
               // "go to the first slide" -> 1 + Enter in the embedded PDF
               // "go to the last slide" -> will require calculating the n, + enter in the embedded PDF
               // "go to the slide with the (.+)" -> will search through the slide, find the number + enter in the embedded PDF
+
+              // "search for (.+)" -> will search for the text in the embedded PDF
+              if (commandPatterns.indexOf(pattern) === 0) {
+                pageNavigation.jumpToNextPage();
+              } else if (commandPatterns.indexOf(pattern) === 1) {
+                pageNavigation.jumpToPreviousPage();
+              } else if (commandPatterns.indexOf(pattern) === 2) {
+                pageNavigation.jumpToPage(0);
+              } else if (commandPatterns.indexOf(pattern) === 3) {
+                pageNavigation.jumpToLastPage();
+              }
 
               break;
             }
