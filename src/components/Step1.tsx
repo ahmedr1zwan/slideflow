@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-export const Step1 = ({ setStep, setPdfFile, pdfError, setPdfError }) => {
+export const Step1 = ({ setStep, setPdfFile, pdfError, setPdfError, pdfTotalPages, setPdfTotalPages, pdfRoutes, setPdfRoutes }) => {
     const [loading, setLoading] = useState(false);
 
     // Only accept PDF and PPTX
@@ -26,45 +26,90 @@ export const Step1 = ({ setStep, setPdfFile, pdfError, setPdfError }) => {
 
         // Clear any previous error
         setPdfError('');
-
         if (selectedFile.type === 'application/pdf') {
-            // We already have a PDF, just convert to base64 or store the blob URL.
+
             const reader = new FileReader();
             reader.readAsDataURL(selectedFile);
-            reader.onloadend = () => {
+
+            // When the file is read, set the PDF file and upload it to the server
+            reader.onloadend = async () => {
                 if (reader.result) {
                     setPdfFile(reader.result as string);
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+
+                    console.log("File successful set, attempting to upload reader.result");
+                    try {
+                        const response = await axios.post(
+                            'http://127.0.0.1:5000/pdf/upload',
+                            formData,
+                            {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data',
+                                },
+                            }
+                        );
+                        // Log the response to check if the API call was successful
+                        console.log('File upload response:', response.data);
+                        setPdfRoutes((prev) => [...prev, response.data.path]);
+
+                        const response2 = await axios.post(
+                            'http://127.0.0.1:5000/pdf/analyze',
+                            {
+                                file_path: response.data.path, // Send the path directly in JSON format
+                            },
+                            {
+                                headers: {
+                                    'Content-Type': 'application/json', // Set the content type to JSON
+                                },
+                            }
+                        );
+                        console.log('Analyze response:', response2.data);
+
+                        // Check whether `slide_number` or `pages` is present in the response
+                        if (response2.data.slide_number !== undefined) {
+                            setPdfTotalPages(response2.data.slide_number);
+                        } else if (Array.isArray(response2.data.data.pages)) {
+                            setPdfTotalPages(response2.data.data.pages.length);
+                        } else {
+                            console.error('Unexpected response format:', response2.data);
+                        }
+                        setStep(2);
+                    } catch (error) {
+                        console.error('Error uploading file:', error);
+                    }
                 }
             };
-        } else if (
-            selectedFile.type ===
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        ) {
-            try {
-                setLoading(true);
-                const formData = new FormData();
-                formData.append('File', selectedFile);
+        } else if (selectedFile.type ===
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
 
-                // The backend endpoint will handle .pptx to .pdf conversions
+            const reader = new FileReader();
+            reader.readAsDataURL(selectedFile);
 
-                // Currently does not work
-                // Try ?Secret=... if ?auth=... doesn’t work
-                // const response = await axios.post(
-                //     'https://v2.convertapi.com/convert/pptx/to/pdf?Secret=secret_6r2cLaES5Deas1F2',
-                //     formData,
-                //     {
-                //         headers: {
-                //             'Content-Type': 'multipart/form-data',
-                //         },
-                //     }
-                // );
+            // When the file is read, set the PDF file and upload it to the server
+            reader.onloadend = async () => {
+                if (reader.result) {
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
 
-            } catch (error) {
-                console.error(error);
-                setPdfError('Error converting PPTX to PDF. Please try again later.');
-            } finally {
-                setLoading(false);
-            }
+                    console.log("File successful set, attempting to upload pptx file");
+                    const response = await axios.post(
+                        'http://127.0.0.1:5000/pptx_to_pdf/convert',
+                        formData,
+                        {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                            },
+                        }
+                    );
+
+                    console.log('File convert response:', response.data);
+
+                    setPdfFile(response.data);
+
+                }
+            };
+
         }
     };
 

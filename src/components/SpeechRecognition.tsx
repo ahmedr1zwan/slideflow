@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import PDFNavigationContext from '../contexts/PDFNavigationContext';
+import axios from 'axios';
 
-const SpeechRecognition = () => {
+const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
   const [transcript, setTranscript] = useState('');
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
@@ -55,9 +56,9 @@ const SpeechRecognition = () => {
             console.log(finalTranscript + " did (not?) match to " + pattern);
             if (match) {
               const command = pattern.source;
-              const parameter = match[1] || null;
+              const phrase = match[0];
               // Handle the command accordingly
-              console.log(`Command: ${command}`, parameter ? `Parameter: ${parameter}` : '');
+              console.log(`Command: ${command}`);
 
               // TODO: Implement Corresponding behaviour based on the command
               // "next slide" -> the down key in the embedded PDF
@@ -75,6 +76,27 @@ const SpeechRecognition = () => {
                 pageNavigation.jumpToPage(0);
               } else if (commandPatterns.indexOf(pattern) === 3) {
                 pageNavigation.jumpToLastPage();
+              } else {
+                const filepath = pdfRoutes[pdfRoutes.length - 1]; // Replace with actual logic to get PDF path
+                console.log(filepath);
+                const filetype = filepath.split('.').pop();
+                // call axios with promise at this endpoint `http://127.0.0.1:5000/${filetype}/search`,
+                axios
+                  .post(`http://127.0.0.1:5000/${filetype}/search`, {
+                    file_path: filepath,
+                    phrase: phrase,
+                  })
+                  .then((response) => {
+                    // const pageNumber = response.data.page; // Assume backend returns { page: number }
+                    // if (typeof pageNumber === 'number') {
+                    //   pageNavigation.jumpToPage(pageNumber);
+                    // } else {
+                    console.log('Data:', response.data);
+                    // }
+                  })
+                  .catch((error) => {
+                    console.error('Error navigating to slide:', error);
+                  });
               }
 
               break;
@@ -127,7 +149,7 @@ const SpeechRecognition = () => {
 
   return (
     <div style={{ padding: '2rem' }} id="speech-recognition">
-      <h1 className="text-3xl">Web Speech API in React</h1>
+      <h1 className="text-3xl text-white">Web Speech API in React</h1>
       <div className="flex items-center font-bold">
         <button onClick={handleStart} disabled={listening} className="bg-red-200">
           Start
