@@ -1,70 +1,44 @@
-# Getting Started with Create React App
+# SlideFlow: AI-Powered Presentation Assistant
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+SlideFlow is an innovative AI-powered tool designed to make presentations smarter and more interactive. By combining voice recognition, natural language processing, and computer vision, SlideFlow enables seamless control and search of slide content. Whether you’re navigating between slides, searching for specific topics, or engaging your audience, SlideFlow transforms the presentation experience.
 
-## Available Scripts
+## Key Features
 
-In the project directory, you can run:
+- **Voice Commands for Navigation**  
+  Control slides hands-free with commands like “Next slide” or “Previous slide.”
 
-### `npm start`
+- **Voice-Powered Search**  
+  Find slides by describing their content, such as “Go to the slide with Japan in the title” or “Show me the slide with a desert.”
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Live Transcription**  
+  Displays a real-time transcript of the presenter’s speech.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Audience Interaction**  
+  Audiences can search slides using natural language, making presentations more engaging and collaborative.
 
-### `npm test`
+## Technology Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Front End**:  
+  - React  
+  - Tailwind CSS  
 
-### `npm run build`
+- **Back End**:  
+  - Flask  
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **AI Integration**:  
+  - **Web Speech API**: Real-time voice recognition.  
+  - **Google Cloud Vision API**: Image detection and processing.  
+  - **Sentence-BERT**: Semantic similarity for precise slide matching.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## How to Run the React App
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd <repository-folder>
+2. **Install Dependencies**:
+   ```bash
+   npm install
+3. **Run the app**:
+   ```bash
+   npm start
