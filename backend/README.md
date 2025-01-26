@@ -18,18 +18,22 @@ Before starting, ensure you have the following installed:
 ## Setup Instructions
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/ahmedr1zwan/slideflow.git
 cd backend
 ```
 
 ### 2. Create and Activate a Virtual Environment
+
 #### Create the environment:
+
 ```bash
 python3 -m venv .venv
 ```
 
 #### Activate the environment:
+
 - **macOS/Linux**:
   ```bash
   source .venv/bin/activate
@@ -40,14 +44,19 @@ python3 -m venv .venv
   ```
 
 ### 3. Install Dependencies
+
 Install all required Python packages:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. Start the Redis Server
+
 Ensure that Redis is installed and running:
+
 #### Install Redis (if not installed):
+
 - **macOS**:
   ```bash
   brew install redis
@@ -59,21 +68,27 @@ Ensure that Redis is installed and running:
   ```
 
 #### Start Redis:
+
 ```bash
 redis-server
 ```
 
 #### Verify Redis is Running:
+
 ```bash
 redis-cli ping
 ```
+
 You should see the response:
+
 ```
 PONG
 ```
 
 ### 5. Configure Google Cloud Vision
+
 Set up your Google Cloud Vision API credentials:
+
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Enable the Vision API.
 3. Download your service account JSON key.
@@ -83,9 +98,11 @@ Set up your Google Cloud Vision API credentials:
    ```
 
 ### 6. Start the Flask App
+
 Run the Flask app:
+
 ```bash
-python run.py
+python app.py
 ```
 
 By default, the app runs on `http://127.0.0.1:5000`.
@@ -95,6 +112,7 @@ By default, the app runs on `http://127.0.0.1:5000`.
 ## API Endpoints
 
 ### 1. Upload `.pptx` File
+
 **Endpoint**: `/upload`  
 **Method**: `POST`  
 **Description**: Upload a `.pptx` file for analysis.
@@ -102,6 +120,7 @@ By default, the app runs on `http://127.0.0.1:5000`.
 ---
 
 ### 2. Analyze Content
+
 **Endpoint**: `/analyze`  
 **Method**: `POST`  
 **Description**: Process a `.pptx` file to extract and analyze its content.
@@ -109,6 +128,7 @@ By default, the app runs on `http://127.0.0.1:5000`.
 ---
 
 ### 3. Search for a Phrase
+
 **Endpoint**: `/search`  
 **Method**: `POST`  
 **Description**: Search for a phrase in the analyzed `.pptx` files.
@@ -118,6 +138,7 @@ By default, the app runs on `http://127.0.0.1:5000`.
 ## Troubleshooting
 
 ### Common Issues
+
 - **Redis Connection Refused**:
   Ensure Redis is installed and running on `localhost:6379`. See the [Start Redis Server](#4-start-the-redis-server) section.
 - **Google Cloud Vision Credentials Not Found**:
