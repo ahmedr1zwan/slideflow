@@ -212,7 +212,7 @@ def search_pptx_phrase():
                 semantic_similarity = util.cos_sim(phrase_embedding, slide_embedding).item()
 
                 # Combine scores (weighted average)
-                combined_score = 0.7 * semantic_similarity + 0.3 * (fuzzy_score / 100)
+                combined_score = 0.85 * semantic_similarity + 0.15 * (fuzzy_score / 100)
 
                 if combined_score >= semantic_threshold:
                     matching_results.append({
@@ -236,7 +236,7 @@ def search_pptx_phrase():
                         image_text_embedding = sbert_model.encode(image_text)
                         image_semantic_similarity = util.cos_sim(phrase_embedding, image_text_embedding).item()
                         image_fuzzy_score = fuzz.partial_ratio(phrase.lower(), image_text.lower())
-                        image_combined_score = 0.7 * image_semantic_similarity + 0.3 * (image_fuzzy_score / 100)
+                        image_combined_score = 0.85 * image_semantic_similarity + 0.15 * (image_fuzzy_score / 100)
 
                         if image_combined_score >= semantic_threshold:
                             matching_results.append({
@@ -254,7 +254,7 @@ def search_pptx_phrase():
                         label_embedding = sbert_model.encode(label)
                         label_semantic_similarity = util.cos_sim(phrase_embedding, label_embedding).item()
                         label_fuzzy_score = fuzz.partial_ratio(phrase.lower(), label.lower())
-                        label_combined_score = 0.7 * label_semantic_similarity + 0.3 * (label_fuzzy_score / 100)
+                        label_combined_score = 0.85 * label_semantic_similarity + 0.15 * (label_fuzzy_score / 100)
 
                         if label_combined_score >= semantic_threshold:
                             matching_results.append({

@@ -21,14 +21,17 @@ export const Navbar = () => {
     
             <div className="w-5/6 mx-auto flex flex-col justify-around relative z-10">
                 <div className="flex flex-row justify-between">
-                    <img
-                        src="/images/logo.svg"
-                        alt="logo"
-                        className="w-12 h-12"
-                    />
+                    <div className="flex flex-row gap-6 items-center hover:cursor-pointer" onClick={() => navigate("/")}>
+                        <img
+                            src="/images/logo.svg"
+                            alt="logo"
+                            className="w-12 h-12"
+                        />
+                        <p className="font-montserrat text-3xl font-semibold bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent select-none">SlideFlow</p>
+                    </div>
                     <div className="flex flex-row gap-10">
                         <button 
-                            className="text-white font-quicksand font-medium text-lg relative group hover:cursor-pointer"
+                            className="text-white font-quicksand font-medium text-lg relative group hover:cursor-pointer select-none"
                             onClick={() => navigate("/")}
                         >
                             HOME
@@ -40,7 +43,7 @@ export const Navbar = () => {
                             <div className="border-r border-r-[#ffffff20] h-8" />
                         </div>
                         <button 
-                            className="text-white font-quicksand font-medium text-lg relative group hover:cursor-pointer"
+                            className="text-white font-quicksand font-medium text-lg relative group hover:cursor-pointer select-none"
                             onClick={() => navigate("/about")}
                         >
                             ABOUT

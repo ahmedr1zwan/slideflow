@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import PDFNavigationContext from '../contexts/PDFNavigationContext';
+import axios from 'axios';
 
-const SpeechRecognition = () => {
+const SpeechRecognition = ({ pdfTotalPages, pdfRoutes, setStep }) => {
   const [transcript, setTranscript] = useState('');
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
   const pageNavigation = useContext(PDFNavigationContext);
+
+  const [isOn, setIsOn] = useState(false);
   // TODO: Consider defining a variable that keeps track of the transcript from beginning to now
 
   const commandPatterns = [
@@ -13,7 +16,7 @@ const SpeechRecognition = () => {
     /previous slide$/i,
     /to( the)? first slide$/i,
     /to( the)? last slide$/i,
-    /to the slide with the (.+)$/i,
+    /to the slide with (.+)$/i,
     /to the slide titled (.+)$/i,
     /search for (.+)$/i,
   ];
@@ -52,21 +55,11 @@ const SpeechRecognition = () => {
 
           for (const pattern of commandPatterns) {
             const match = finalTranscript.match(pattern);
-            console.log(finalTranscript + " did (not?) match to " + pattern);
             if (match) {
               const command = pattern.source;
-              const parameter = match[1] || null;
+              const phrase = match[0];
               // Handle the command accordingly
-              console.log(`Command: ${command}`, parameter ? `Parameter: ${parameter}` : '');
-
-              // TODO: Implement Corresponding behaviour based on the command
-              // "next slide" -> the down key in the embedded PDF
-              // "previous slide" -> the up key in the embedded PDF
-              // "go to the first slide" -> 1 + Enter in the embedded PDF
-              // "go to the last slide" -> will require calculating the n, + enter in the embedded PDF
-              // "go to the slide with the (.+)" -> will search through the slide, find the number + enter in the embedded PDF
-
-              // "search for (.+)" -> will search for the text in the embedded PDF
+              console.log(`Command: ${command}`);
               if (commandPatterns.indexOf(pattern) === 0) {
                 pageNavigation.jumpToNextPage();
               } else if (commandPatterns.indexOf(pattern) === 1) {
@@ -74,7 +67,26 @@ const SpeechRecognition = () => {
               } else if (commandPatterns.indexOf(pattern) === 2) {
                 pageNavigation.jumpToPage(0);
               } else if (commandPatterns.indexOf(pattern) === 3) {
-                pageNavigation.jumpToLastPage();
+                pageNavigation.jumpToPage(pdfTotalPages - 1);
+              } else {
+                const filepath = pdfRoutes[pdfRoutes.length - 1]; // Replace with actual logic to get PDF path
+                console.log(pdfRoutes);
+                const filetype = filepath.split('.').pop();
+                // call axios with promise at this endpoint `http://127.0.0.1:5000/${filetype}/search`,
+                axios
+                  .post(`http://127.0.0.1:5000/${filetype}/search`, {
+                    file_path: filepath,
+                    phrase: phrase,
+                  })
+                  .then((response) => {
+                    console.log("Searching response:", response.data.result.page_number);
+                    if (response.data.result) {
+                      pageNavigation.jumpToPage(response.data.result.page_number - 1);
+                    }
+                  })
+                  .catch((error) => {
+                    console.error('Error navigating to slide:', error);
+                  });
               }
 
               break;
@@ -127,20 +139,77 @@ const SpeechRecognition = () => {
 
   return (
     <div style={{ padding: '2rem' }} id="speech-recognition">
-      <h1 className="text-3xl">Web Speech API in React</h1>
-      <div className="flex items-center font-bold">
-        <button onClick={handleStart} disabled={listening} className="bg-red-200">
-          Start
-        </button>
-        <button onClick={handleStop} disabled={!listening} className="bg-green-200">
-          Stop
-        </button>
+      <div className="flex flex-row items-center justify-around w-1/2 mx-auto">
+        {/* Zeroth button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => {
+              setStep(1);
+            }}
+            className={`bg-gradient-to-r from-[#b3d12d] to-[#c8720f] 
+                                    font-montserrat p-6 rounded-full mx-auto hover:cursor-pointer`}
+          >
+            <img
+              src="/images/backbutton.svg"
+              alt="Microphone Icon"
+              className="w-8 h-8 select-none"
+              draggable="false"
+            />
+          </button>
+          <p className="font-montserrat text-white mt-2">
+            BACK
+          </p>
+        </div>
+        {/* First button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => {
+              setIsOn(prev => !prev);
+              handleStart();
+            }}
+            disabled={listening}
+            className={`bg-gradient-to-r from-[#38bdf8] to-[#34d399] 
+                                    font-montserrat p-6 rounded-full mx-auto 
+                                    ${listening ? "opacity-50 cursor-not-allowed" : "hover:cursor-pointer"}`}
+          >
+            <img
+              src="/images/micBlack.svg"
+              alt="Microphone Icon"
+              className="w-8 h-8 select-none"
+              draggable="false"
+            />
+          </button>
+          <p className="font-montserrat text-white mt-2">
+            START
+          </p>
+        </div>
+
+        {/* Second button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleStop}
+            disabled={!listening}
+            className={`bg-gradient-to-r from-[#f87171] to-[#facc15] 
+                                    font-montserrat p-6 rounded-full mx-auto 
+                                    ${!listening ? "opacity-50 cursor-not-allowed" : "hover:cursor-pointer"}`}
+          >
+            <img
+              src="/images/square.svg"
+              alt="Stop Icon"
+              className="w-8 h-8 select-none scale-80"
+              draggable="false"
+            />
+          </button>
+          <p className="font-montserrat text-white mt-2">
+            STOP
+          </p>
+        </div>
       </div>
 
-      <p style={{ marginTop: '1rem', fontSize: '1.2rem' }}>
+
+      <p style={{ marginTop: '1rem', fontSize: '1.2rem' }} className="text-white/50 font-quicksand">
         Transcript: {transcript}
       </p>
-
     </div>
   );
 };

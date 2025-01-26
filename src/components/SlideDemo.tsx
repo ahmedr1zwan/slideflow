@@ -179,7 +179,7 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
         <div className="w-full h-80 flex flex-row justify-between text-white">
             {/* Left side */}
             <div className="w-1/2 flex flex-col justify-around p-4">
-                <div className="flex flex-row h-1/2 gap-4">
+                <div className="flex flex-row h-1/2 gap-8">
                     <div id="thisdiv" ref={thisDivRef}>
                         <MicDesign on={isOn} />
                     </div>
