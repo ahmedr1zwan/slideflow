@@ -1,10 +1,10 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import SpeechRecognition from '../components/SpeechRecognition.tsx';
 import PDFViewerComponent from '../components/PDFViewerComponent.jsx';
-
-// Import both the context and the plugin if needed
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import PDFNavigationContext from '../contexts/PDFNavigationContext.jsx';
+import Step0 from '../components/Step0.tsx';
+import Step1 from '../components/Step1.tsx';
 
 export const RecordingPage = () => {
 
@@ -12,19 +12,21 @@ export const RecordingPage = () => {
     const defaultLayoutPluginInstance = defaultLayoutPlugin();
     const { toolbarPluginInstance } = defaultLayoutPluginInstance;
     const { pageNavigationPluginInstance } = toolbarPluginInstance;
+    const [step, setStep] = useState(0);
+    const [role, setRole] = useState('');
 
-    const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if (event.key === 'ArrowDown') {
-            console.log("ArrowDown");
-        }
-    }, []);
+    // State for PDF file and errors
+    const [pdfFile, setPdfFile] = useState(null);
+    const [pdfError, setPdfError] = useState('');
 
     return (
         <PDFNavigationContext.Provider value={pageNavigationPluginInstance}>
             <div>
-                <p className="text-3xl font-bold border">Recording Page</p>
-                <SpeechRecognition />
-                <PDFViewerComponent plugin={defaultLayoutPluginInstance} />
+                <p className="text-3xl font-bold border">Get started</p>
+                {step === 0 && <Step0 setRole={setRole} setStep={setStep} />}
+                {step === 1 && <Step1 setStep={setStep} pdfError={pdfError} setPdfError={setPdfError} setPdfFile={setPdfFile} />}
+                {step === 2 && <SpeechRecognition />}
+                <PDFViewerComponent plugin={defaultLayoutPluginInstance} pdfFile={pdfFile} pdfError={pdfError} />
             </div>
         </PDFNavigationContext.Provider>
 
