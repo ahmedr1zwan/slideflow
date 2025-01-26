@@ -4,7 +4,7 @@ import CustomArrow from '../components/CustomArrow.tsx'
 import SlideDemo from '../components/SlideDemo.tsx';
 
 export const LandingPage = () => {
-    const [hovered, setHovered] = useState<Boolean>(false);
+    const [hovered, setHovered] = useState(false);
 
     return (
         <div className="w-5/6 mx-auto">
@@ -17,7 +17,7 @@ export const LandingPage = () => {
                 </p>
             </div>
             <div className="text-center text-2xl font-quicksand mt-4">
-                <p className="text-[#888888]">Slide flows, Text floats. kevin we are changing this sht ASAP</p>  { /* yo this sht gotta change bro */ }
+                <p className="text-[#888888]">Slide flows, Text floats. </p> 
                 <motion.button
                     initial={{ scale: 1 }}
                     whileHover={{ 
@@ -121,28 +121,25 @@ export const LandingPage = () => {
                         </div>
 
                     </motion.div>
-                    <div className="flex flex-row justify-between text-white/70 w-[83%] mx-auto mt-4">
-                        <div className="w-1/3 flex flex-row justify-start">
-                            <div className="relative left-[12px]">
-                                <p className="text-sm">Simply upload any .pptx or</p>
-                                <p className="text-sm">.pdf file into SlideFlow</p>
+                    <div className="flex flex-row justify-between text-white/70 mx-auto mt-4">
+                        <div className="flex flex-row justify-start">
+                            <div className="w-[140px]">
+                                <p className="text-sm">Simply upload any .pptx or .pdf file into SlideFlow</p>
                             </div>
                         </div>
-                        <div className="w-1/3">
-                            <p className="text-sm">We will automatically use AI</p>
-                            <p className="text-sm">to process the content in</p>
-                            <p className="text-sm">your presentation</p>
+                        <div className="w-60" />
+                        <div className="">
+                            <p className="text-sm w-[140px]">We will automatically use AI to process the content in your presentation</p>
                         </div>
-                        <div className="w-1/3 flex flex-row justify-end">
-                            <div className="relative left-[8px]">
-                                <p className="text-sm">You will be able to use all</p>
-                                <p className="text-sm">of our AI commands immediately</p>
-                                <p className="text-sm">in real time</p>
+                        <div className="w-60" />
+                        <div className="flex flex-row justify-end">
+                            <div className="w-[140px]">
+                                <p className="text-sm w-[140px]">You will be able to use all of our AI commands in real time</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div className="my-16 border-t border-t-gray-300/20"/>
+                    <div className="my-24 border-t border-t-gray-300/20"/>
                     <div className="">
                         <SlideDemo left={true} />
                     </div>

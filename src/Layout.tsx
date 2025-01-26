@@ -14,7 +14,9 @@ export const Layout = () => {
                 }}
             />
             <Navbar />
-            <Outlet />
+            <div className="relative">
+                <Outlet />
+            </div>
         </div>
     )
 }

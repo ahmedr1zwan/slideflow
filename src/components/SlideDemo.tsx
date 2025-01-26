@@ -9,6 +9,7 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
 
     const [textBoolean, setTextBoolean] = useState<Boolean[]>([false, false, false, false, false, false, false]);
     const [text, setText] = useState<String[]>(["GO", "TO THE", "SLIDE", "WITH", "JAPAN", "IN THE", "TITLE"]);
+    const [colourBoolean, setColourBoolean] = useState<Boolean[]>([false, false, false, false, false, false, false]);
 
     const [scope, animate] = useAnimate();
 
@@ -87,6 +88,7 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
 
         setTimeout(() => { setIsOn(true); }, 500);
         setText(["GO", "TO THE", "SLIDE", "WITH", "JAPAN", "IN THE", "TITLE"]);
+        setColourBoolean([false, false, false, false, true, false, false]);
 
         // Store timer IDs in the ref
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, false, false, false, false, false, false]); }, 2000));
@@ -100,6 +102,7 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
         
         timerRefs.current.push(setTimeout(() => { setTextBoolean([false, false, false, false, false, false, false]); }, 7000));
         timerRefs.current.push(setTimeout(() => { setText(["GO", "TO THE", "SECOND", "SLIDE"]); }, 8000));
+        timerRefs.current.push(setTimeout(() => { setColourBoolean([false, false, true, true, false, false, false]);}, 8000));
 
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, false, false, false, false, false, false]); }, 9000));
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, true, false, false, false, false, false]); }, 9400));
@@ -110,6 +113,7 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
 
         timerRefs.current.push(setTimeout(() => { setTextBoolean([false, false, false, false, false, false, false]); }, 13000));
         timerRefs.current.push(setTimeout(() => { setText(["GO", "TO THE", "SLIDE", "WITH", "A", "DESERT"]); }, 14000));
+        timerRefs.current.push(setTimeout(() => { setColourBoolean([false, false, true, true, true, true, false]);}, 14000));
 
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, false, false, false, false, false, false]); }, 15000));
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, true, false, false, false, false, false]); }, 15400));
@@ -121,6 +125,8 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
 
         timerRefs.current.push(setTimeout(() => { setTextBoolean([false, false, false, false, false, false, false]); }, 19500));
         timerRefs.current.push(setTimeout(() => { setText(["GO", "TO THE", "FIRST", "SLIDE"]); }, 20500));
+        timerRefs.current.push(setTimeout(() => { setColourBoolean([false, false, true, true, false, false, false]);}, 20500));
+
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, false, false, false, false, false, false]); }, 21500));
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, true, false, false, false, false, false]); }, 21900));
         timerRefs.current.push(setTimeout(() => { setTextBoolean([true, true, true, false, false, false, false]); }, 22200));
@@ -148,7 +154,11 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
         setIsOn(false);
         setTextBoolean([false, false, false, false, false, false, false]);
         setText(["GO", "TO THE", "SLIDE", "WITH", "JAPAN", "IN THE", "TITLE"]);
-        animate(scope.current, { x: 0 }, { duration: 0.1 });
+        if (scope.current && typeof scope.current === 'object') {
+            animate(scope.current, { x: 0 }, { duration: 0.1 });
+        } else {
+            console.error('Invalid scope.current:', scope.current);
+        }
         setPosition(0);
     }
 
@@ -175,13 +185,13 @@ const SlideDemo = ({ left = true }: { left: Boolean }) => {
                     </div>
                     <div className="flex flex-col justify-around">
                         <p className="text-3xl font-montserrat font-bold">
-                            <span className={`${textBoolean[0] ? "opacity-100" : "opacity-0"}`}>{text[0]} </span>
-                            <span className={`${textBoolean[1] ? "opacity-100" : "opacity-0"}`}>{text[1]} </span>
-                            <span className={`${textBoolean[2] ? "opacity-100" : "opacity-0"}`}>{text[2]} </span>
-                            <span className={`${textBoolean[3] ? "opacity-100" : "opacity-0"}`}>{text[3]} </span>
-                            <span className={`${textBoolean[4] ? "opacity-100" : "opacity-0"}`}>{text[4]} </span> 
-                            <span className={`${textBoolean[5] ? "opacity-100" : "opacity-0"}`}>{text[5]} </span>
-                            <span className={`${textBoolean[6] ? "opacity-100" : "opacity-0"}`}>{text[6]} </span>
+                            <span className={`${textBoolean[0] ? "opacity-100" : "opacity-0"} ${colourBoolean[0] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[0]} </span>
+                            <span className={`${textBoolean[1] ? "opacity-100" : "opacity-0"} ${colourBoolean[1] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[1]} </span>
+                            <span className={`${textBoolean[2] ? "opacity-100" : "opacity-0"} ${colourBoolean[2] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[2]} </span>
+                            <span className={`${textBoolean[3] ? "opacity-100" : "opacity-0"} ${colourBoolean[3] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[3]} </span>
+                            <span className={`${textBoolean[4] ? "opacity-100" : "opacity-0"} ${colourBoolean[4] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[4]} </span> 
+                            <span className={`${textBoolean[5] ? "opacity-100" : "opacity-0"} ${colourBoolean[5] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[5]} </span>
+                            <span className={`${textBoolean[6] ? "opacity-100" : "opacity-0"} ${colourBoolean[6] ? "bg-gradient-to-r from-[#38bdf8] to-[#34d399] bg-clip-text text-transparent" : ""}`}>{text[6]} </span>
                         </p>
                     </div>
                 </div>
