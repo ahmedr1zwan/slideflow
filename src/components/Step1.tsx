@@ -39,7 +39,6 @@ export const Step1 = ({ setStep, setPdfFile, pdfError, setPdfError, pdfTotalPage
                     const formData = new FormData();
                     formData.append('file', selectedFile);
 
-                    console.log("File successful set, attempting to upload reader.result");
                     try {
                         const response = await axios.post(
                             'http://127.0.0.1:5000/pdf/upload',

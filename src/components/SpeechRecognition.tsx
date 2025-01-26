@@ -55,7 +55,6 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes, setStep }) => {
 
           for (const pattern of commandPatterns) {
             const match = finalTranscript.match(pattern);
-            console.log(finalTranscript + " did (not?) match to " + pattern);
             if (match) {
               const command = pattern.source;
               const phrase = match[0];
@@ -80,8 +79,9 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes, setStep }) => {
                     phrase: phrase,
                   })
                   .then((response) => {
-                    if (response.data.results.length > 0) {
-                      pageNavigation.jumpToPage(response.data.results[0].page_number - 1);
+                    console.log("Searching response:", response.data.result.page_number);
+                    if (response.data.result) {
+                      pageNavigation.jumpToPage(response.data.result.page_number - 1);
                     }
                   })
                   .catch((error) => {
@@ -146,11 +146,11 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes, setStep }) => {
             onClick={() => {
               setStep(1);
             }}
-            className={`bg-gradient-to-r from-[#38bdf8] to-[#34d399] 
+            className={`bg-gradient-to-r from-[#b3d12d] to-[#c8720f] 
                                     font-montserrat p-6 rounded-full mx-auto hover:cursor-pointer`}
           >
             <img
-              src="/images/micBlack.svg"
+              src="/images/backbutton.svg"
               alt="Microphone Icon"
               className="w-8 h-8 select-none"
               draggable="false"
