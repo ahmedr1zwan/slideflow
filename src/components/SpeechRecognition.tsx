@@ -20,7 +20,7 @@ const SpeechRecognition = () => {
 
   document.addEventListener('keydown', () => {
     console.log("testing");
-    pageNavigation.jumpToNextPage();
+    // pageNavigation.jumpToNextPage();
   });
 
   useEffect(() => {
