@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import PDFNavigationContext from '../contexts/PDFNavigationContext';
 import axios from 'axios';
 
-const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
+const SpeechRecognition = ({ pdfTotalPages, pdfRoutes, setStep }) => {
   const [transcript, setTranscript] = useState('');
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
@@ -61,15 +61,6 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
               const phrase = match[0];
               // Handle the command accordingly
               console.log(`Command: ${command}`);
-
-              // TODO: Implement Corresponding behaviour based on the command
-              // "next slide" -> the down key in the embedded PDF
-              // "previous slide" -> the up key in the embedded PDF
-              // "go to the first slide" -> 1 + Enter in the embedded PDF
-              // "go to the last slide" -> will require calculating the n, + enter in the embedded PDF
-              // "go to the slide with the (.+)" -> will search through the slide, find the number + enter in the embedded PDF
-
-              // "search for (.+)" -> will search for the text in the embedded PDF
               if (commandPatterns.indexOf(pattern) === 0) {
                 pageNavigation.jumpToNextPage();
               } else if (commandPatterns.indexOf(pattern) === 1) {
@@ -77,10 +68,10 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
               } else if (commandPatterns.indexOf(pattern) === 2) {
                 pageNavigation.jumpToPage(0);
               } else if (commandPatterns.indexOf(pattern) === 3) {
-                pageNavigation.jumpToLastPage();
+                pageNavigation.jumpToPage(pdfTotalPages - 1);
               } else {
                 const filepath = pdfRoutes[pdfRoutes.length - 1]; // Replace with actual logic to get PDF path
-                console.log(filepath);
+                console.log(pdfRoutes);
                 const filetype = filepath.split('.').pop();
                 // call axios with promise at this endpoint `http://127.0.0.1:5000/${filetype}/search`,
                 axios
@@ -89,12 +80,9 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
                     phrase: phrase,
                   })
                   .then((response) => {
-                    // const pageNumber = response.data.page; // Assume backend returns { page: number }
-                    // if (typeof pageNumber === 'number') {
-                    //   pageNavigation.jumpToPage(pageNumber);
-                    // } else {
-                    console.log('Data:', response.data);
-                    // }
+                    if (response.data.results.length > 0) {
+                      pageNavigation.jumpToPage(response.data.results[0].page_number - 1);
+                    }
                   })
                   .catch((error) => {
                     console.error('Error navigating to slide:', error);
@@ -151,7 +139,27 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
 
   return (
     <div style={{ padding: '2rem' }} id="speech-recognition">
-      <div className="flex flex-row items-center justify-around w-1/4 mx-auto">
+      <div className="flex flex-row items-center justify-around w-1/2 mx-auto">
+        {/* Zeroth button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => {
+              setStep(1);
+            }}
+            className={`bg-gradient-to-r from-[#38bdf8] to-[#34d399] 
+                                    font-montserrat p-6 rounded-full mx-auto hover:cursor-pointer`}
+          >
+            <img
+              src="/images/micBlack.svg"
+              alt="Microphone Icon"
+              className="w-8 h-8 select-none"
+              draggable="false"
+            />
+          </button>
+          <p className="font-montserrat text-white mt-2">
+            BACK
+          </p>
+        </div>
         {/* First button */}
         <div className="flex flex-col items-center">
           <button

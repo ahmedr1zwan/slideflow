@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from "framer-motion";
+import axios from 'axios';
 
 export const Step1 = ({ setStep, setPdfFile, pdfError, setPdfError, pdfTotalPages, setPdfTotalPages, pdfRoutes, setPdfRoutes }) => {
     const [loading, setLoading] = useState(false);

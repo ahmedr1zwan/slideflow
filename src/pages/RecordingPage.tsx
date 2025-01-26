@@ -28,7 +28,7 @@ export const RecordingPage = () => {
                 <div className="border-b border-b-gray-500/70 my-4 w-1/2 mx-auto" />
                 {step === 0 && <Step0 setRole={setRole} setStep={setStep} />}
                 {step === 1 && <Step1 setStep={setStep} pdfError={pdfError} setPdfError={setPdfError} setPdfFile={setPdfFile} pdfTotalPages={pdfTotalPages} setPdfTotalPages={setPdfTotalPages} pdfRoutes={pdfRoutes} setPdfRoutes={setPdfRoutes} />}
-                {step === 2 && <SpeechRecognition pdfTotalPages={pdfTotalPages} pdfRoutes={pdfRoutes} />}
+                {step === 2 && <SpeechRecognition pdfTotalPages={pdfTotalPages} pdfRoutes={pdfRoutes} setStep={setStep} />}
                 <PDFViewerComponent plugin={defaultLayoutPluginInstance} pdfFile={pdfFile} />
             </div>
         </PDFNavigationContext.Provider>
