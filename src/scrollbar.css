@@ -1,0 +1,18 @@
+/* Allow scrolling but hide the scrollbars */
+body, html {
+    overflow: scroll; /* Make sure the page is scrollable */
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+/* Hide the scrollbars for specific elements */
+* {
+    -ms-overflow-style: none;  /* For Internet Explorer 10+ */
+    scrollbar-width: none;  /* For Firefox */
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+*::-webkit-scrollbar {
+    display: none;
+}
