@@ -23,7 +23,7 @@ function PDFViewerComponent({ plugin, pdfFile, role, resultIndex, results, setRe
     return (
         <div className="container">
             <h5></h5>
-            <div className="viewer" style={{ height: '750px' }}>
+            <div className="viewer" style={{ height: '500px' }}>
                 {pdfFile ? (
                     <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
                         <Viewer fileUrl={pdfFile} plugins={[plugin]} />
