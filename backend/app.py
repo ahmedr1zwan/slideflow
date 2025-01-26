@@ -5,6 +5,7 @@ import PyPDF2
 from pptx import Presentation
 from routes.pdf_routes import pdf_routes
 from routes.pptx_routes import pptx_routes
+from routes.convert import pptx_to_pdf_blueprint
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -14,6 +15,7 @@ app.config['UPLOAD_FOLDER'] = './files/'  # Directory for uploaded files
 # Register Blueprints
 app.register_blueprint(pdf_routes, url_prefix='/pdf')
 app.register_blueprint(pptx_routes, url_prefix='/pptx')
+app.register_blueprint(pptx_to_pdf_blueprint, url_prefix='/pptx_to_pdf')
 
 # Define a route for the home page
 @app.route('/')

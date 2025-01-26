@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import PDFNavigationContext from '../contexts/PDFNavigationContext';
+import axios from 'axios';
 
-const SpeechRecognition = () => {
+const SpeechRecognition = ({ pdfTotalPages, pdfRoutes }) => {
   const [transcript, setTranscript] = useState('');
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
@@ -57,9 +58,9 @@ const SpeechRecognition = () => {
             console.log(finalTranscript + " did (not?) match to " + pattern);
             if (match) {
               const command = pattern.source;
-              const parameter = match[1] || null;
+              const phrase = match[0];
               // Handle the command accordingly
-              console.log(`Command: ${command}`, parameter ? `Parameter: ${parameter}` : '');
+              console.log(`Command: ${command}`);
 
               // TODO: Implement Corresponding behaviour based on the command
               // "next slide" -> the down key in the embedded PDF
@@ -77,6 +78,27 @@ const SpeechRecognition = () => {
                 pageNavigation.jumpToPage(0);
               } else if (commandPatterns.indexOf(pattern) === 3) {
                 pageNavigation.jumpToLastPage();
+              } else {
+                const filepath = pdfRoutes[pdfRoutes.length - 1]; // Replace with actual logic to get PDF path
+                console.log(filepath);
+                const filetype = filepath.split('.').pop();
+                // call axios with promise at this endpoint `http://127.0.0.1:5000/${filetype}/search`,
+                axios
+                  .post(`http://127.0.0.1:5000/${filetype}/search`, {
+                    file_path: filepath,
+                    phrase: phrase,
+                  })
+                  .then((response) => {
+                    // const pageNumber = response.data.page; // Assume backend returns { page: number }
+                    // if (typeof pageNumber === 'number') {
+                    //   pageNavigation.jumpToPage(pageNumber);
+                    // } else {
+                    console.log('Data:', response.data);
+                    // }
+                  })
+                  .catch((error) => {
+                    console.error('Error navigating to slide:', error);
+                  });
               }
 
               break;
@@ -127,61 +149,61 @@ const SpeechRecognition = () => {
     }
   };
 
-    return (
-        <div style={{ padding: '2rem' }} id="speech-recognition">
-            <div className="flex flex-row items-center justify-around w-1/4 mx-auto">
-                {/* First button */}
-                <div className="flex flex-col items-center">
-                    <button 
-                        onClick={() => {
-                            setIsOn(prev => !prev);
-                            handleStart();
-                        }}
-                        disabled={listening} 
-                        className={`bg-gradient-to-r from-[#38bdf8] to-[#34d399] 
+  return (
+    <div style={{ padding: '2rem' }} id="speech-recognition">
+      <div className="flex flex-row items-center justify-around w-1/4 mx-auto">
+        {/* First button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={() => {
+              setIsOn(prev => !prev);
+              handleStart();
+            }}
+            disabled={listening}
+            className={`bg-gradient-to-r from-[#38bdf8] to-[#34d399] 
                                     font-montserrat p-6 rounded-full mx-auto 
                                     ${listening ? "opacity-50 cursor-not-allowed" : "hover:cursor-pointer"}`}
-                    >
-                        <img 
-                            src="/images/micBlack.svg"
-                            alt="Microphone Icon"
-                            className="w-8 h-8 select-none"
-                            draggable="false"
-                        />
-                    </button>
-                    <p className="font-montserrat text-white mt-2">
-                        START
-                    </p>
-                </div>
+          >
+            <img
+              src="/images/micBlack.svg"
+              alt="Microphone Icon"
+              className="w-8 h-8 select-none"
+              draggable="false"
+            />
+          </button>
+          <p className="font-montserrat text-white mt-2">
+            START
+          </p>
+        </div>
 
-                {/* Second button */}
-                <div className="flex flex-col items-center">
-                    <button 
-                        onClick={handleStop} 
-                        disabled={!listening} 
-                        className={`bg-gradient-to-r from-[#f87171] to-[#facc15] 
+        {/* Second button */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleStop}
+            disabled={!listening}
+            className={`bg-gradient-to-r from-[#f87171] to-[#facc15] 
                                     font-montserrat p-6 rounded-full mx-auto 
                                     ${!listening ? "opacity-50 cursor-not-allowed" : "hover:cursor-pointer"}`}
-                    >
-                        <img 
-                            src="/images/square.svg" 
-                            alt="Stop Icon" 
-                            className="w-8 h-8 select-none scale-80"
-                            draggable="false"
-                        />
-                    </button>
-                    <p className="font-montserrat text-white mt-2">
-                        STOP
-                    </p>
-                </div>
-            </div>
-
-
-            <p style={{ marginTop: '1rem', fontSize: '1.2rem' }} className="text-white/50 font-quicksand">
-                Transcript: {transcript}
-            </p>
+          >
+            <img
+              src="/images/square.svg"
+              alt="Stop Icon"
+              className="w-8 h-8 select-none scale-80"
+              draggable="false"
+            />
+          </button>
+          <p className="font-montserrat text-white mt-2">
+            STOP
+          </p>
         </div>
-    );
+      </div>
+
+
+      <p style={{ marginTop: '1rem', fontSize: '1.2rem' }} className="text-white/50 font-quicksand">
+        Transcript: {transcript}
+      </p>
+    </div>
+  );
 };
 
 export default SpeechRecognition;

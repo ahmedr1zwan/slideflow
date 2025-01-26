@@ -1,10 +1,14 @@
 import os
-from flask import Blueprint, request, jsonify, current_app, send_file
+from flask import Flask, Blueprint, request, jsonify, current_app, send_file
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from pptx import Presentation
 from PIL import Image
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # Define blueprint
 pptx_to_pdf_blueprint = Blueprint('pptx_to_pdf', __name__)
@@ -31,11 +35,8 @@ def convert_pptx_to_pdf():
 
     # Secure the filename and save the uploaded file
     filename = secure_filename(file.filename)
-    upload_folder = current_app.config.get('UPLOAD_FOLDER', './uploads')
-    converted_folder = current_app.config.get('CONVERTED_FOLDER', './converted')
-
-    os.makedirs(upload_folder, exist_ok=True)
-    os.makedirs(converted_folder, exist_ok=True)
+    upload_folder = "./files/"
+    converted_folder = "./files/"
 
     upload_path = os.path.join(upload_folder, filename)
     file.save(upload_path)
