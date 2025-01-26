@@ -524,6 +524,9 @@
   .collapse {
     visibility: collapse;
   }
+  .invisible {
+    visibility: hidden;
+  }
   .visible {
     visibility: visible;
   }
@@ -605,6 +608,9 @@
   .table {
     display: table;
   }
+  .table-cell {
+    display: table-cell;
+  }
   .size-1 {
     width: calc(var(--spacing) * 1);
     height: calc(var(--spacing) * 1);
@@ -627,12 +633,25 @@
   .resize {
     resize: both;
   }
+  .items-center {
+    align-items: center;
+  }
   .rounded {
     border-radius: 0.25rem;
   }
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
+  }
+  .bg-green-200 {
+    background-color: var(--color-green-200);
+  }
+  .bg-red-200 {
+    background-color: var(--color-red-200);
+  }
+  .text-3xl {
+    font-size: var(--text-3xl);
+    line-height: var(--tw-leading, var(--text-3xl--line-height));
   }
   .text-4xl {
     font-size: var(--text-4xl);
@@ -641,6 +660,10 @@
   .text-5xl {
     font-size: var(--text-5xl);
     line-height: var(--tw-leading, var(--text-5xl--line-height));
+  }
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
   }
   .lowercase {
     text-transform: lowercase;
@@ -661,6 +684,10 @@
   .shadow {
     --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .\!outline {
+    outline-style: var(--tw-outline-style) !important;
+    outline-width: 1px !important;
   }
   .outline {
     outline-style: var(--tw-outline-style);
@@ -758,6 +785,10 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false;
 }
 @property --tw-shadow {
   syntax: "*";
