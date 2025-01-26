@@ -5,6 +5,7 @@ import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
 import PDFNavigationContext from '../contexts/PDFNavigationContext.jsx';
 import Step0 from '../components/Step0.tsx';
 import Step1 from '../components/Step1.tsx';
+import SearchBar from '../components/SearchBar.tsx';
 
 export const RecordingPage = () => {
 
@@ -21,6 +22,10 @@ export const RecordingPage = () => {
     const [pdfTotalPages, setPdfTotalPages] = useState(0);
     const [pdfRoutes, setPdfRoutes] = useState([]);
 
+    // State for search results
+    const [resultIndex, setResultIndex] = useState(0);
+    const [results, setResults] = useState([]);
+
     return (
         <PDFNavigationContext.Provider value={pageNavigationPluginInstance}>
             <div className=" w-5/6 mx-auto mt-32 min-h-screen">
@@ -28,8 +33,9 @@ export const RecordingPage = () => {
                 <div className="border-b border-b-gray-500/70 my-4 w-1/2 mx-auto" />
                 {step === 0 && <Step0 setRole={setRole} setStep={setStep} />}
                 {step === 1 && <Step1 setStep={setStep} pdfError={pdfError} setPdfError={setPdfError} setPdfFile={setPdfFile} pdfTotalPages={pdfTotalPages} setPdfTotalPages={setPdfTotalPages} pdfRoutes={pdfRoutes} setPdfRoutes={setPdfRoutes} />}
-                {step === 2 && <SpeechRecognition pdfTotalPages={pdfTotalPages} pdfRoutes={pdfRoutes} setStep={setStep} />}
-                <PDFViewerComponent plugin={defaultLayoutPluginInstance} pdfFile={pdfFile} />
+                {step === 2 && role === "Presenter" && <SpeechRecognition pdfTotalPages={pdfTotalPages} pdfRoutes={pdfRoutes} setStep={setStep} />}
+                {step === 2 && role === "Audience" && <SearchBar setStep={setStep} pdfRoutes={pdfRoutes} resultIndex={resultIndex} setResultIndex={setResultIndex} results={results} setResults={setResults} />}
+                {step === 2 && <PDFViewerComponent plugin={defaultLayoutPluginInstance} pdfFile={pdfFile} role={role} resultIndex={resultIndex} results={results} setResultIndex={setResultIndex} />}
             </div>
         </PDFNavigationContext.Provider>
 

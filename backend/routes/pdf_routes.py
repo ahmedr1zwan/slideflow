@@ -1,5 +1,5 @@
 import hashlib
-from flask import Flask, Blueprint, request, jsonify, current_app
+from flask import Flask, Blueprint, request, jsonify, current_app, send_file
 from flask_cors import CORS
 import os
 import PyPDF2
@@ -29,6 +29,37 @@ vision_client = vision.ImageAnnotatorClient()
 
 # Load Sentence-BERT model
 sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+@pdf_routes.route('/get_pdf_data', methods=['POST'])
+def get_pdf_data():
+    # Get the file_path from the request JSON payload
+    data = request.get_json()
+
+    # Validate that the file_path is provided
+    if not data or 'file_path' not in data:
+        return jsonify({"error": "File path not provided"}), 400
+
+    file_path = data['file_path']
+
+    # Validate the file path exists
+    if not os.path.exists(file_path):
+        return jsonify({"error": f"File '{file_path}' does not exist"}), 404
+
+    # Ensure the file is a PDF
+    if not file_path.lower().endswith('.pdf'):
+        return jsonify({"error": "The provided file is not a PDF"}), 400
+
+    try:
+        # Send the raw file data
+        return send_file(
+            file_path,
+            as_attachment=True,
+            mimetype='application/pdf',
+            download_name=os.path.basename(file_path)  # Use the original filename
+        )
+    except Exception as e:
+        return jsonify({"error": f"Failed to send the PDF file: {str(e)}"}), 500
+    
 
 @pdf_routes.route('/upload', methods=['POST'])
 def upload_pdf():
@@ -170,7 +201,10 @@ def search_pdf_phrase():
         phrase = re.sub(pattern, '', phrase, flags=re.IGNORECASE).strip()
 
     phrase_embedding = sbert_model.encode(phrase)  # Encode phrase for semantic matching
-    semantic_threshold = 0.6  # Adjust as needed for stricter or looser matches
+    semantic_threshold = 0.6  # Base threshold for matches
+    early_termination_threshold = 0.85  # High threshold for early termination
+
+    best_text_match = None
 
     try:
         if search_all:
@@ -187,6 +221,7 @@ def search_pdf_phrase():
 
             keys = [file_hash]
 
+        # Search text
         for key in keys:
             cached_data = redis_client.get(key)
             if not cached_data:
@@ -198,22 +233,21 @@ def search_pdf_phrase():
             for page in pages:
                 page_number = page["page_number"]
                 page_text = page["page_text"]
-                image_analysis = page["image_analysis"]
 
-                # Tokenize text and generate n-grams
                 words = re.findall(r'\b\w+\b', page_text)
-                ngrams = generate_ngrams(words, 3) + words  # Include n-grams and single words
+                ngrams = generate_ngrams(words, 3) + words
 
-                # Match against textual content
                 for chunk in ngrams:
                     fuzzy_score = fuzz.partial_ratio(phrase.lower(), chunk.lower())
                     chunk_embedding = sbert_model.encode(chunk)
                     semantic_similarity = util.cos_sim(phrase_embedding, chunk_embedding).item()
 
                     combined_score = 0.85 * semantic_similarity + 0.15 * (fuzzy_score / 100)
-                    if combined_score >= semantic_threshold:
+
+                    # Early return if high confidence match
+                    if combined_score >= early_termination_threshold:
                         return jsonify({
-                            "message": f"Phrase '{phrase}' found.",
+                            "message": f"Phrase '{phrase}' matched with high confidence in text.",
                             "result": {
                                 "file_name": file_name,
                                 "page_number": page_number,
@@ -224,19 +258,51 @@ def search_pdf_phrase():
                                 "combined_score": combined_score
                             }
                         }), 200
+                    
 
-                # Match against image analysis metadata
+                    # Track the best text match below the early termination threshold
+                    if combined_score >= semantic_threshold:
+                        if not best_text_match or combined_score > best_text_match['combined_score']:
+                            best_text_match = {
+                                "file_name": file_name,
+                                "page_number": page_number,
+                                "match_type": "text",
+                                "matched_chunk": chunk,
+                                "syntactic_score": fuzzy_score,
+                                "semantic_similarity": semantic_similarity,
+                                "combined_score": combined_score
+                            }
+
+        if best_text_match:
+            return jsonify({
+                "message": f"Phrase '{phrase}' best match found in text.",
+                "result": best_text_match
+            }), 200
+
+        # Search labels
+        best_label_match = None
+        for key in keys:
+            cached_data = redis_client.get(key)
+            if not cached_data:
+                continue
+            file_data = json.loads(cached_data)
+            file_name = file_data['file_name']
+            pages = file_data['pages']
+
+            for page in pages:
+                page_number = page["page_number"]
+                image_analysis = page["image_analysis"]
+
                 for analysis in image_analysis:
-                    # Labels
                     for label in analysis["labels"]:
                         label_embedding = sbert_model.encode(label)
                         label_similarity = util.cos_sim(phrase_embedding, label_embedding).item()
                         label_fuzzy = fuzz.partial_ratio(phrase.lower(), label.lower())
                         label_score = 0.85 * label_similarity + 0.15 * (label_fuzzy / 100)
+
                         if label_score >= semantic_threshold:
-                            return jsonify({
-                                "message": f"Phrase '{phrase}' found.",
-                                "result": {
+                            if not best_label_match or label_score > best_label_match['combined_score']:
+                                best_label_match = {
                                     "file_name": file_name,
                                     "page_number": page_number,
                                     "match_type": "label",
@@ -245,18 +311,37 @@ def search_pdf_phrase():
                                     "semantic_similarity": label_similarity,
                                     "combined_score": label_score
                                 }
-                            }), 200
 
-                    # Logos
+        if best_label_match:
+            return jsonify({
+                "message": f"Phrase '{phrase}' best match found in labels.",
+                "result": best_label_match
+            }), 200
+
+        # Search logos
+        best_logo_match = None
+        for key in keys:
+            cached_data = redis_client.get(key)
+            if not cached_data:
+                continue
+            file_data = json.loads(cached_data)
+            file_name = file_data['file_name']
+            pages = file_data['pages']
+
+            for page in pages:
+                page_number = page["page_number"]
+                image_analysis = page["image_analysis"]
+
+                for analysis in image_analysis:
                     for logo in analysis["logos"]:
                         logo_embedding = sbert_model.encode(logo)
                         logo_similarity = util.cos_sim(phrase_embedding, logo_embedding).item()
                         logo_fuzzy = fuzz.partial_ratio(phrase.lower(), logo.lower())
                         logo_score = 0.85 * logo_similarity + 0.15 * (logo_fuzzy / 100)
+
                         if logo_score >= semantic_threshold:
-                            return jsonify({
-                                "message": f"Phrase '{phrase}' found.",
-                                "result": {
+                            if not best_logo_match or logo_score > best_logo_match['combined_score']:
+                                best_logo_match = {
                                     "file_name": file_name,
                                     "page_number": page_number,
                                     "match_type": "logo",
@@ -265,23 +350,133 @@ def search_pdf_phrase():
                                     "semantic_similarity": logo_similarity,
                                     "combined_score": logo_score
                                 }
-                            }), 200
 
-                    # Safe search annotations
-                    for key, value in analysis["safe_search"].items():
-                        if key in ["adult", "violence", "racy"] and str(value) in phrase.lower():
-                            return jsonify({
-                                "message": f"Phrase '{phrase}' found.",
-                                "result": {
-                                    "file_name": file_name,
-                                    "page_number": page_number,
-                                    "match_type": "safe_search",
-                                    "matched_metadata": {key: value},
-                                    "combined_score": 1.0  # Metadata match, assume max accuracy
-                                }
-                            }), 200
+        if best_logo_match:
+            return jsonify({
+                "message": f"Phrase '{phrase}' best match found in logos.",
+                "result": best_logo_match
+            }), 200
 
         return jsonify({"message": f"Phrase '{phrase}' not found in any document."}), 404
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred during search: {str(e)}"}), 500
+
+@pdf_routes.route('/search-all', methods=['POST'])
+def search_all_pdf_phrase():
+    search_all = request.args.get('searchAll', 'false').lower() == 'true'  # Check if searchAll is true
+    data = request.get_json()
+
+    if not data or 'phrase' not in data:
+        return jsonify({"error": "Phrase not provided"}), 400
+
+    phrase = data['phrase']
+    phrase_embedding = sbert_model.encode(phrase)  # Encode the phrase for semantic matching
+    semantic_threshold = 0.5  # Minimum threshold for semantic similarity
+    fuzzy_threshold = 80  # Minimum threshold for fuzzy matching
+    matching_results = []
+
+    try:
+        if search_all:
+            # Retrieve all cached keys from Redis
+            keys = redis_client.keys()
+        else:
+            # Search within a specific file
+            if 'file_path' not in data:
+                return jsonify({"error": "file_path must be provided if searchAll is false"}), 400
+
+            file_path = data['file_path']
+            file_hash = hashlib.md5(file_path.encode()).hexdigest()
+
+            if not redis_client.exists(file_hash):
+                return jsonify({"error": f"File '{file_path}' not found in Redis cache. Please analyze it first."}), 404
+
+            keys = [file_hash]
+
+        # Perform the search
+        for key in keys:
+            # Retrieve cached file data from Redis
+            cached_data = redis_client.get(key)
+            if not cached_data:
+                continue
+            file_data = json.loads(cached_data)  # Parse JSON string into Python dictionary
+
+            file_name = file_data['file_name']
+            pages = file_data['pages']
+
+            for page in pages:
+                page_number = page['page_number']
+                page_text = page['page_text']
+                image_analysis = page['image_analysis']
+
+                # Syntactic similarity (fuzzy matching)
+                fuzzy_score = fuzz.partial_ratio(phrase.lower(), page_text.lower())
+
+                # Semantic similarity (cosine similarity with embeddings)
+                page_embedding = sbert_model.encode(page_text)
+                semantic_similarity = util.cos_sim(phrase_embedding, page_embedding).item()
+
+                # Combine scores (weighted average)
+                combined_score = 0.9 * semantic_similarity + 0.1 * (fuzzy_score / 100)
+
+                if combined_score >= semantic_threshold:
+                    matching_results.append({
+                        "file_name": file_name,
+                        "page_number": page_number,
+                        "match_type": "text",
+                        "syntactic_score": fuzzy_score,
+                        "semantic_similarity": semantic_similarity,
+                        "combined_score": combined_score
+                    })
+                    continue
+
+                # Check image metadata
+                for image in image_analysis:
+                    labels = image['labels']
+                    image_text = image['text']
+
+                    # Syntactic and semantic similarity in image text
+                    if image_text.strip():
+                        image_text_embedding = sbert_model.encode(image_text)
+                        image_semantic_similarity = util.cos_sim(phrase_embedding, image_text_embedding).item()
+                        image_fuzzy_score = fuzz.partial_ratio(phrase.lower(), image_text.lower())
+                        image_combined_score = 0.9 * image_semantic_similarity + 0.1 * (image_fuzzy_score / 100)
+
+                        if image_combined_score >= semantic_threshold:
+                            matching_results.append({
+                                "file_name": file_name,
+                                "page_number": page_number,
+                                "match_type": "image_text",
+                                "syntactic_score": image_fuzzy_score,
+                                "semantic_similarity": image_semantic_similarity,
+                                "combined_score": image_combined_score
+                            })
+                            break
+                    # Syntactic and semantic similarity in image labels
+                    for label in labels:
+                        label_embedding = sbert_model.encode(label)
+                        label_semantic_similarity = util.cos_sim(phrase_embedding, label_embedding).item()
+                        label_fuzzy_score = fuzz.partial_ratio(phrase.lower(), label.lower())
+                        label_combined_score = 0.9 * label_semantic_similarity + 0.1 * (label_fuzzy_score / 100)
+
+                        if label_combined_score >= semantic_threshold:
+                            matching_results.append({
+                                "file_name": file_name,
+                                "page_number": page_number,
+                                "match_type": "image_label",
+                                "syntactic_score": label_fuzzy_score,
+                                "semantic_similarity": label_semantic_similarity,
+                                "combined_score": label_combined_score
+                            })
+                            break
+
+        # Sort results by combined score in descending order
+        matching_results.sort(key=lambda x: x['combined_score'], reverse=True)
+
+        return jsonify({
+            "message": f"Phrase '{phrase}' search results:",
+            "results": matching_results
+        }), 200
 
     except Exception as e:
         return jsonify({"error": f"An error occurred during search: {str(e)}"}), 500

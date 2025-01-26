@@ -16,7 +16,7 @@ const SpeechRecognition = ({ pdfTotalPages, pdfRoutes, setStep }) => {
     /previous slide$/i,
     /to( the)? first slide$/i,
     /to( the)? last slide$/i,
-    /to the slide with the (.+)$/i,
+    /to the slide with (.+)$/i,
     /to the slide titled (.+)$/i,
     /search for (.+)$/i,
   ];
