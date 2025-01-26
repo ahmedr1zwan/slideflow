@@ -19,6 +19,8 @@ backend/.venv/*
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+backend/secrets/*
 
 npm-debug.log*
 yarn-debug.log*
