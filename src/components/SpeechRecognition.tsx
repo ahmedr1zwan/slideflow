@@ -6,6 +6,8 @@ const SpeechRecognition = () => {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
   const pageNavigation = useContext(PDFNavigationContext);
+
+  const [isOn, setIsOn] = useState(false);
   // TODO: Consider defining a variable that keeps track of the transcript from beginning to now
 
   const commandPatterns = [
@@ -125,24 +127,61 @@ const SpeechRecognition = () => {
     }
   };
 
-  return (
-    <div style={{ padding: '2rem' }} id="speech-recognition">
-      <h1 className="text-3xl">Web Speech API in React</h1>
-      <div className="flex items-center font-bold">
-        <button onClick={handleStart} disabled={listening} className="bg-red-200">
-          Start
-        </button>
-        <button onClick={handleStop} disabled={!listening} className="bg-green-200">
-          Stop
-        </button>
-      </div>
+    return (
+        <div style={{ padding: '2rem' }} id="speech-recognition">
+            <div className="flex flex-row items-center justify-around w-1/4 mx-auto">
+                {/* First button */}
+                <div className="flex flex-col items-center">
+                    <button 
+                        onClick={() => {
+                            setIsOn(prev => !prev);
+                            handleStart();
+                        }}
+                        disabled={listening} 
+                        className={`bg-gradient-to-r from-[#38bdf8] to-[#34d399] 
+                                    font-montserrat p-6 rounded-full mx-auto 
+                                    ${listening ? "opacity-50 cursor-not-allowed" : "hover:cursor-pointer"}`}
+                    >
+                        <img 
+                            src="/images/micBlack.svg"
+                            alt="Microphone Icon"
+                            className="w-8 h-8 select-none"
+                            draggable="false"
+                        />
+                    </button>
+                    <p className="font-montserrat text-white mt-2">
+                        START
+                    </p>
+                </div>
 
-      <p style={{ marginTop: '1rem', fontSize: '1.2rem' }}>
-        Transcript: {transcript}
-      </p>
+                {/* Second button */}
+                <div className="flex flex-col items-center">
+                    <button 
+                        onClick={handleStop} 
+                        disabled={!listening} 
+                        className={`bg-gradient-to-r from-[#f87171] to-[#facc15] 
+                                    font-montserrat p-6 rounded-full mx-auto 
+                                    ${!listening ? "opacity-50 cursor-not-allowed" : "hover:cursor-pointer"}`}
+                    >
+                        <img 
+                            src="/images/square.svg" 
+                            alt="Stop Icon" 
+                            className="w-8 h-8 select-none scale-80"
+                            draggable="false"
+                        />
+                    </button>
+                    <p className="font-montserrat text-white mt-2">
+                        STOP
+                    </p>
+                </div>
+            </div>
 
-    </div>
-  );
+
+            <p style={{ marginTop: '1rem', fontSize: '1.2rem' }} className="text-white/50 font-quicksand">
+                Transcript: {transcript}
+            </p>
+        </div>
+    );
 };
 
 export default SpeechRecognition;

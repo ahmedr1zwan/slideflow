@@ -8,14 +8,14 @@ function PDFViewerComponent({ plugin, pdfFile, pdfError }) {
 
     return (
         <div className="container">
-            <h5>View PDF</h5>
-            <div className="viewer" style={{ border: '1px solid rgba(0, 0, 0, 0.3)', height: '750px' }}>
+            <h5></h5>
+            <div className="viewer" style={{ height: '750px' }}>
                 {pdfFile ? (
                     <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
                         <Viewer fileUrl={pdfFile} plugins={[plugin]} />
                     </Worker>
                 ) : (
-                    <>No file is selected yet</>
+                    <></>
                 )}
             </div>
         </div>
