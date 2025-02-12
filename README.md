@@ -30,6 +30,8 @@ SlideFlow is an innovative AI-powered tool designed to make presentations smarte
   - **Google Cloud Vision API**: Image detection and processing.  
   - **Sentence-BERT**: Semantic similarity for precise slide matching.
 
+![SlideFlowArch_4-ezgif com-webp-to-jpg-converter](https://github.com/user-attachments/assets/a7bdf18e-face-41c4-baf6-583249ae1d17)
+
 ## How to Run the React App
 
 1. **Clone the repository**:
